@@ -123,19 +123,38 @@ where LastName like '_a%'
    or LastName like '_u%';
 
 # 21. Find Lviv branches that issued loans totaling more than 5000
-select sum(Sum) , DepartmentCity from department d
-                                          join client c on c.Department_idDepartment = d.idDepartment
-                                          join application a on c.idClient = a.Client_idClient
-where Sum > 5000 group by idDepartment;
+select sum(Sum) AllSum, DepartmentCity from department d
+    join client c on c.Department_idDepartment = d.idDepartment
+    join application a on c.idClient = a.Client_idClient
+where DepartmentCity = 'Lviv' group by idDepartment having AllSum > 5000;
 
 #22. Find clients who have repaid loans worth more than 5000
-#
-#23. Find the largest outstanding loan.
-#
+select FirstName, LastName, Sum, CreditState from client
+                                                      join application on client.idClient = application.Client_idClient
+where CreditState = 'Returned' and Sum >5000;
+
+#23. Find the largest not returned loan.
+select FirstName, LastName, max(Sum) LargestOutstanding, CreditState from client c
+                                                                              join application a on c.idClient = a.Client_idClient
+where CreditState ='Not returned' group by FirstName, LastName, CreditState order by LargestOutstanding desc limit 1;
+
 #24. Find the client with the lowest loan amount
-#
-# 25. Find loans whose amount is greater than the arithmetic average of all loans.
-#
+select FirstName, LastName, sum(Sum) lowestLoan from client c
+                                                         join application a on c.idClient = a.Client_idClient
+group by FirstName, LastName order by lowestLoan limit 1;
+
+#25. Find loans whose sum is greater than the arithmetic average of all loans.
+select idApplication,Sum from application
+where Sum > (select avg(Sum) from application);
+
 #26. Find clients from the same city as the client who took the largest number of loans.
-#
-#27. Find the client’s city with the most credits.
+select * from client c
+                  join application a on c.idClient = a.Client_idClient
+where City = (select City from client c
+                                   join application a on c.idClient = a.Client_idClient
+              order by Sum desc limit 1);
+
+#27. Find the client’s city with the most quantity of credits.
+select City, count(Sum) quantityOfCredits from client c
+                                                   join application a on c.idClient = a.Client_idClient
+group by City order by quantityOfCredits desc;
