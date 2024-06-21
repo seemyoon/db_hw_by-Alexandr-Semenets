@@ -1,0 +1,173 @@
+//1) Find all children whose average score is 4.2
+db.students.find({
+    avgScore: 4.2
+})
+//2) Find all children from 1st grade
+db.students.find()
+//3) Find all children who study physics
+db.students.find({lessons: "physics"})
+//4) Find all children whose parents are scientists (scientist)
+db.students.aggregate({
+    $match: {
+        'parents.profession': 'scientist'
+    }
+})
+//5) Find all children whose average score is greater than 4
+db.students.find({
+    class: {$gte: 1}
+}).sort({
+    class: 1
+})
+//6) Find the best student
+db.students.find().sort({avgScore: -1}).limit(1)
+
+//7) Find the worst student
+db.students.find().sort({avgScore: 1}).limit(1)
+//8) Find top 3 students
+db.students.find().sort({avgScore: -1}).limit(3)
+//9) Find the average score for the school
+db.students.aggregate(
+    [
+        {
+            $group: {
+                _id: null,
+                avgScore: {$avg: "$avgScore"},
+            }
+        },
+        {
+            $project: {
+                _id: 0
+            }
+        }
+    ]
+)
+//10) Find the average score of students who study mathematics or physics
+db.students.aggregate(
+    [{
+        $match:
+            {
+                $or:
+                    [
+                        {lessons: "mathematics"},
+                        {lessons: "physics"}
+                    ]
+            }
+    },
+        {
+            $project:
+                {
+                    _id: 0,
+                    name: 1,
+                    avgScore: 1
+                }
+        }
+    ]
+)
+//11) Find the average score of 2nd grade
+db.students.aggregate(
+    [
+        {
+            $match:
+                {
+                    class: 2
+                }
+        },
+        {
+            $group: {
+                _id: null,
+                averageScore: {
+                    $avg: "$avgScore"
+                },
+
+            }
+        },
+        {
+            $addFields: {
+                className: 2
+            }
+        },
+        {
+            $project:
+                {
+                    _id: 0,
+
+                }
+        }
+    ]
+)
+//12) Find children with single-parent families
+db.students.find(
+    {
+        parents: {$size: 1}
+    }
+)
+//13) Find unemployed parents
+db.students.aggregate(
+    [
+        {
+            $unwind: '$parents'
+        },
+        {
+            $match: {
+                'parents.profession': {$exists: 0}
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                name: 1,
+                'parents.name': 1,
+            }
+        }
+    ])
+//14) Kick out children with a grade point average of less than 2.5
+db.students.deleteMany({
+    avgScore: {$lte: 2.5}
+})
+//15) For children who have parents with the profession of teacher, give an average score of 5
+db.students.updateMany({
+        "parents.profession": "teacher"
+    },
+    {
+        $set:
+            {avgScore: 5}
+    })
+//16) Find children who are in primary school (up to grade 5) and are studying physics
+db.students.find(
+    {
+        $and:
+            [
+                {class: {$lte: 5}},
+                {lessons: 'physics'}
+            ]
+    }
+)
+//17) Find the most successful class
+db.students.aggregate(
+    [
+        {
+            $group:
+                {
+                    _id: '$class',
+                    averageScore: {$avg: '$avgScore'}
+                }
+        },
+        {
+            $sort:
+                {
+                    averageScore: -1
+                }
+        },
+        {
+            $limit: 1
+        },
+        {
+            $project:
+                {
+                    _id:0,
+                    className:"$_id",
+                    averageScore:1
+                }
+        }
+    ]
+)
